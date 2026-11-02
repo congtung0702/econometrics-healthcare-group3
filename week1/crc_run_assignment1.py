@@ -1,6 +1,6 @@
 from miscore import Model, processes, Universe
-from assignment1 import crc_data_assignment1
-from assignment1.crc_process_assignment1 import CRC
+import crc_data_assignment1
+from crc_process_assignment1 import CRC
 
 # Birth process
 birth = processes.Birth(
