@@ -151,6 +151,12 @@ class CRC(Process):
         if individual.memory["crc_lesion_removed"]:
             return
 
+        # E (our own addition, not in the assignment text): a screen-detected cancer
+        # still has this progress event waiting in the queue. Without this guard it
+        # would progress further and trigger a second crc_clinical event.
+        if "crc_clinical_information" in individual.memory:
+            return
+
         # Retrieve natural history
         state, dwell = next(individual.memory["crc_natural_history"])
 

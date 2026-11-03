@@ -1,6 +1,7 @@
 from typing import Any, Dict, List
 
 from miscore import Process, Individual
+from crc_process_assignment2 import CANCER_STAGE  # E
 
 
 class CRC_screening(Process):
@@ -58,6 +59,8 @@ class CRC_screening(Process):
             else:
                 if individual.properties("crc_r_sensitivity_all_stage") < self.sensitivity["all_stage"]:
                     result = "cancer"  # C
+                    # E: screen-detected cancer becomes clinically known, at the corresponding stage
+                    individual.add_to_queue(0., "crc_clinical", stage=CANCER_STAGE[stage])
                 else:
                     result = "negative"
 
