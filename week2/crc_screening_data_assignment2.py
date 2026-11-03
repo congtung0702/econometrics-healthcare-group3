@@ -1,5 +1,7 @@
+# B: sensitivity of the crc screening process
 sensitivity = {
-    "stage": 0.5,
+    "adenoma": 0.75,
+    "all_stage": 0.95,
 }
 
 screening_ages = [70]
