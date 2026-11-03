@@ -119,6 +119,9 @@ class CRC(Process):
         # Initialize list that will hold the lesion
         individual.memory["crc_lesion"] = []                                                            # new
 
+        # D: boolean that tells whether the lesion was removed (e.g. by screening)
+        individual.memory["crc_lesion_removed"] = False
+
         # Schedule onset
         individual.add_to_queue_age(individual.properties("crc_onset"), "crc_onset")
 
@@ -143,6 +146,10 @@ class CRC(Process):
     @staticmethod
     def progress(individual: Individual):
         """Method to simulate progression of the disease."""
+
+        # D: a removed lesion no longer progresses
+        if individual.memory["crc_lesion_removed"]:
+            return
 
         # Retrieve natural history
         state, dwell = next(individual.memory["crc_natural_history"])

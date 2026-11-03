@@ -51,6 +51,7 @@ class CRC_screening(Process):
             if stage == "adenoma":
                 if individual.properties("crc_r_sensitivity_adenoma") < self.sensitivity["adenoma"]:
                     result = "adenoma"  # C: report the lesion type instead of "positive"
+                    individual.memory["crc_lesion_removed"] = True  # D: adenoma is removed immediately
                 else:
                     result = "negative"
 
