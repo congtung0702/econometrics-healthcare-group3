@@ -42,9 +42,23 @@ class CRC_screening(Process):
         if "crc_screening_stop" in individual.memory:
             return
 
+        # B: Implement screening sensitivity
         if individual.memory["crc_lesion"]:
-            result = "positive"
-        else:
-            result = "negative"
+            stage = individual.memory["crc_lesion"][1]
 
-        individual.log_event(f"crc_screening_{result}")
+            if stage == "adenoma":
+                if individual.properties("crc_r_sensitivity_adenoma") < self.sensitivity["adenoma"]:
+                    result = "positive"
+                else:
+                    result = "negative"
+
+            else:
+                if individual.properties("crc_r_sensitivity_all_stage") < self.sensitivity["all_stage"]:
+                    result = "positive"
+                else:
+                    result = "negative"
+
+            individual.log_event(f"crc_screening_{result}")
+
+        else:
+            individual.log_event(f"crc_screening_negative")

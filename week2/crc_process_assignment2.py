@@ -95,6 +95,11 @@ class CRC(Process):
         r_cure = rng.random(n)
         r_time_to_death = rng.random(n)
 
+        # B: Draw random numbers to use in sensitivity of the screening
+        r_sensitivity_adenoma = rng.random(n)
+        r_sensitivity_all_stage = rng.random(n)
+
+        # B: Return the random numbers generated
         return {
             "crc_onset": onset_age,
             "crc_r_transition_1": r_transition_1,
@@ -102,7 +107,9 @@ class CRC(Process):
             "crc_r_transition_3": r_transition_3,
             "crc_r_dwell": r_dwell_precursor,
             "crc_r_cure": r_cure,
-            "crc_r_time_to_death": r_time_to_death
+            "crc_r_time_to_death": r_time_to_death,
+            "crc_r_sensitivity_adenoma": r_sensitivity_adenoma,
+            "crc_r_sensitivity_all_stage": r_sensitivity_all_stage,
         }
 
     @staticmethod
