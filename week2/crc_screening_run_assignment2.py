@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from miscore import Model, processes, Universe
 import crc_data_assignment2
 import crc_screening_data_assignment2
@@ -69,6 +71,7 @@ result = model.run(
     verbose=True
 )
 
-# Export
-result.events.to_csv("events.csv")
-result.durations.to_csv("durations.csv")
+# Export next to this script, regardless of where it is run from
+out_dir = Path(__file__).parent
+result.events.to_csv(out_dir / "events.csv")
+result.durations.to_csv(out_dir / "durations.csv")
