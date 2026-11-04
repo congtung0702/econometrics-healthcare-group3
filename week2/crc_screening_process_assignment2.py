@@ -7,9 +7,10 @@ from crc_process_assignment2 import CANCER_STAGE  # E
 class CRC_screening(Process):
     name = "crc_screening"
 
+    # C: Change positive result into adenoma or cancer stage tests
     event_tags = [
-        "crc_screening_adenoma",  # C
-        "crc_screening_cancer",  # C
+        "crc_screening_adenoma",
+        "crc_screening_cancer",
         "crc_screening_negative",
     ]
 
@@ -46,20 +47,23 @@ class CRC_screening(Process):
 
         # B: Implement screening sensitivity
         if individual.memory["crc_lesion"]:
-            # B: crc_lesion is the state string itself (e.g. "adenoma"), not a sequence
             stage = individual.memory["crc_lesion"]
 
+
+            # D: screen-detected adenomas become known, and are removed immediately
             if stage == "adenoma":
                 if individual.properties("crc_r_sensitivity_adenoma") < self.sensitivity["adenoma"]:
-                    result = "adenoma"  # C: report the lesion type instead of "positive"
-                    individual.memory["crc_lesion_removed"] = True  # D: adenoma is removed immediately
+                    # C: return adenoma stage
+                    result = "adenoma"
+                    individual.memory["crc_lesion_removed"] = True
                 else:
                     result = "negative"
 
+            # E: screen-detected cancer becomes clinically known, at the corresponding stage
             else:
                 if individual.properties("crc_r_sensitivity_all_stage") < self.sensitivity["all_stage"]:
-                    result = "cancer"  # C
-                    # E: screen-detected cancer becomes clinically known, at the corresponding stage
+                    # C: return cancer stage
+                    result = "cancer"
                     individual.add_to_queue(0., "crc_clinical", stage=CANCER_STAGE[stage])
                 else:
                     result = "negative"
