@@ -39,9 +39,13 @@ class CRC(Process):
     """
     name = "crc"
 
-    # log the important event tags
+    # F: log the important event tags
     event_tags = [
         "crc_onset",
+        "crc_sd1",
+        "crc_sd2",
+        "crc_sd3",
+        "crc_sd4",
         "crc_cl1",
         "crc_cl2",
         "crc_cl3",
@@ -54,7 +58,7 @@ class CRC(Process):
         f"crc_{sd_cl}{stage}_{phase}"
         for sd_cl, stage, phase
         in product(
-            ["cl"],
+            ["cl", "sd"],
             ["1", "2", "3", "4"],
             ["init", "cont", "term", "term_oc"]
         )
@@ -176,7 +180,11 @@ class CRC(Process):
             "screen_detected": screen_detected                                                          # new
         }
 
-        individual.log_event(f"crc_cl{stage}")
+        # F: Change output to distinguish screen-detected cancers
+        if screen_detected:
+            individual.log_event(f"crc_sd{stage}")
+        else:
+            individual.log_event(f"crc_cl{stage}")
 
         # stop screening when clinically detected
         individual.add_to_queue(0., "crc_stop_screening")                                                  # new

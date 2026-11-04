@@ -36,7 +36,9 @@ class CRC_screening(Process):
     def schedule_screening(self, individual: Individual):
         """Method to schedule the screening invitations."""
 
-        individual.add_to_queue_age(70, "crc_screening_invitation")
+        # H: Add screening ages at correct ages
+        for age in self.screening_ages:
+            individual.add_to_queue_age(age, "crc_screening_invitation")
 
     def crc_screen(self, individual: Individual):
         """Method to process participation and outcomes of invited screening round."""
@@ -64,7 +66,8 @@ class CRC_screening(Process):
                 if individual.properties("crc_r_sensitivity_all_stage") < self.sensitivity["all_stage"]:
                     # C: return cancer stage
                     result = "cancer"
-                    individual.add_to_queue(0., "crc_clinical", stage=CANCER_STAGE[stage])
+                    # F: Pass screen_detected boolean as TRUE
+                    individual.add_to_queue(0., "crc_clinical", stage=CANCER_STAGE[stage], screen_detected=True)
                 else:
                     result = "negative"
 
