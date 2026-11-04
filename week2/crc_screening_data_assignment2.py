@@ -4,4 +4,5 @@ sensitivity = {
     "all_stage": 0.95,
 }
 
-screening_ages = [70]
+# H: screening ages
+screening_ages = [50, 55, 60]
