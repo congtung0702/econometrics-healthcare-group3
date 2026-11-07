@@ -58,5 +58,3 @@ age
 60.0                   8009                   717                   82600   91326
 Totaal aantal tests: 282,763
 Tests per gewonnen levensjaar: 5.0
-
-Figuren en samenvatting opgeslagen in: /home/claude/output_IJK
