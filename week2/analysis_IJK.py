@@ -5,9 +5,7 @@ Leest de output van crc_screening_run_assignment2.py (events.csv en
 durations.csv) en berekent:
   I) gewonnen levensjaren door screening
   J) voorkomen CRC-gevallen en CRC-sterfgevallen
-
-Zet dit script in dezelfde map als events.csv en durations.csv,
-of pas DATA_DIR hieronder aan.
+  
 """
 from pathlib import Path
 
