@@ -1,0 +1,62 @@
+============================================================
+Totaal aantal events per universe
+============================================================
+universe                no_screening  screening
+tag                                            
+crc_cl1                         5805       4713
+crc_cl2                        11042       8938
+crc_cl3                         9888       7772
+crc_cl4                         9931       7742
+crc_death                      17300      13910
+crc_onset                      64243      64243
+crc_screening_adenoma              0      13973
+crc_screening_cancer               0       1467
+crc_screening_negative             0     267323
+crc_sd1                            0        704
+crc_sd2                            0        437
+crc_sd3                            0        287
+crc_sd4                            0         39
+oc_death                       82700      86090
+
+============================================================
+I) Levensjaren
+============================================================
+Levensjaren zonder screening : 8,027,359
+Levensjaren met screening    : 8,083,504
+Gewonnen levensjaren         : 56,145
+Per persoon (n=100,000)       : 0.561 jaar (= 205 dagen)
+
+============================================================
+J) Voorkomen CRC-gevallen en -sterfte
+============================================================
+CRC-gevallen zonder screening : 36,666
+CRC-gevallen met screening    : 30,632 (klinisch 29,165 + screen-detected 1,467)
+Voorkomen gevallen            : 6,034 (16.5%)
+
+CRC-sterfte zonder screening  : 17,300
+CRC-sterfte met screening     : 13,910
+Voorkomen sterfgevallen       : 3,390 (19.6%)
+
+Onsets (laesies) zonder / met : 64,243 / 64,243
+Adenomen verwijderd           : 13,973
+Kankers via screening gevonden: 1,467
+OC-sterfte zonder / met       : 82,700 / 86,090
+Gewonnen levensjaren per voorkomen CRC-sterfgeval: 16.6
+
+Stadiumverdeling (% van alle CRC-gevallen)
+           no_screening  screening
+stadium 1          15.8       17.7
+stadium 2          30.1       30.6
+stadium 3          27.0       26.3
+stadium 4          27.1       25.4
+
+Screeningsuitslagen per screeningsleeftijd
+tag   crc_screening_adenoma  crc_screening_cancer  crc_screening_negative  totaal
+age                                                                              
+50.0                   1724                   325                   94712   96761
+55.0                   4240                   425                   90011   94676
+60.0                   8009                   717                   82600   91326
+Totaal aantal tests: 282,763
+Tests per gewonnen levensjaar: 5.0
+
+Figuren en samenvatting opgeslagen in: /home/claude/output_IJK
