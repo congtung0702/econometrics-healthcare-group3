@@ -53,7 +53,7 @@ class CRC(Process):
         "crc_death",
     ]
 
-    # log the important duration tags
+    # F: log the important duration tags
     duration_tags = [
         f"crc_{sd_cl}{stage}_{phase}"
         for sd_cl, stage, phase

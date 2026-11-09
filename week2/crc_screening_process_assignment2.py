@@ -51,13 +51,13 @@ class CRC_screening(Process):
         if individual.memory["crc_lesion"]:
             stage = individual.memory["crc_lesion"]
 
-
             # D: screen-detected adenomas become known, and are removed immediately
             if stage == "adenoma":
                 if individual.properties("crc_r_sensitivity_adenoma") < self.sensitivity["adenoma"]:
                     # C: return adenoma stage
                     result = "adenoma"
                     individual.memory["crc_lesion_removed"] = True
+                    individual.memory["crc_lesion"] = []
                 else:
                     result = "negative"
 
