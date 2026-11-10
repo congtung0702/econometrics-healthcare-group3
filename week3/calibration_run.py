@@ -4,10 +4,10 @@ import numpy as np
 from scipy.optimize import minimize
 
 from miscore import Model, processes, Universe
-from assignment3 import crc_data
-from assignment3.crc_process import CRC
-from assignment3 import crc_screening_data
-from assignment3.crc_screening_process import CRC_screening
+from week3 import crc_data
+from week3.crc_process import CRC
+from week3 import crc_screening_data
+from week3.crc_screening_process import CRC_screening
 from miscore.tools.calibration import Target, Fit, MultinomialDeviance, PoissonDeviance, events_from_result, durations_from_result
 
 
