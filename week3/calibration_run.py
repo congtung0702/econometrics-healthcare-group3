@@ -4,19 +4,18 @@ import numpy as np
 from scipy.optimize import minimize
 
 from miscore import Model, processes, Universe
-from week3 import crc_data
-from week3.crc_process import CRC
-from week3 import crc_screening_data
-from week3.crc_screening_process import CRC_screening
+import crc_data
+from crc_process import CRC
+import crc_screening_data
+from crc_screening_process import CRC_screening
 from miscore.tools.calibration import Target, Fit, MultinomialDeviance, PoissonDeviance, events_from_result, durations_from_result
 
 
 def model_from_x(x):
-
-    # A: Birth process born in 1975 only
+    # Birth process
     birth = processes.Birth(
         name="birth",
-        year=1975
+        year=1975   # A: only people born in 1975
     )
 
     # OC process
@@ -30,28 +29,28 @@ def model_from_x(x):
         "scale": x[1]
     }
 
-    # A: Add the three transition probabilities
+    # A: transition probabilities to become clinical in stage 1, 2 and 3
     clinical_prob_from_x = {
         1: x[2],
         2: x[3],
         3: x[4],
     }
 
-    # A: CRC process (take age from age_from_x and take clinical_probability from x)
+    # CRC process
     crc = CRC(
         name="crc",
-        age=age_from_x,
+        age=age_from_x,                              # A
         dwell=crc_data.dwell,
-        clinical_probability=clinical_prob_from_x,
+        clinical_probability=clinical_prob_from_x,   # A
         cure=crc_data.cure,
         time_to_death=crc_data.time_to_death,
     )
 
-    # A: CRC screening process at age of 50
+    # CRC screening process
     crc_screening = CRC_screening(
         name="crc_screening",
         sensitivity=crc_screening_data.sensitivity,
-        screening_ages=[50]
+        screening_ages=[50]   # A: one colonoscopy at age 50
     )
 
     screening = Universe(
@@ -66,18 +65,24 @@ def model_from_x(x):
     return model
 
 
+# D: lower bounds of the age groups 50-54, 55-59, ..., 80-84, 85+
+AGES = [[50], [55], [60], [65], [70], [75], [80], [85]]
+
+# B: all clinical CRC cases (stage 1-4) together in ONE list -> summed into one incidence
+CL_TAGS = ["crc_cl1", "crc_cl2", "crc_cl3", "crc_cl4"]
+
 target_incidence = Target(
     name="Incidence",
     x=[52, 57, 62, 67, 72, 77, 82, 93],
     obs=[922, 1908, 3345, 4789, 5774, 6149, 5577, 5966],
     n=[483074, 473140, 456751, 430442, 390066, 334394, 259603, 260922],
     result_to_sim=events_from_result(
-        tags=[["crc_cl1"]],
-        ages=[[], [], ...]
+        tags=[CL_TAGS],
+        ages=AGES
     ),
     result_to_m=durations_from_result(
         tags=[["life"]],
-        ages=[[], [], ...]
+        ages=AGES
     ),
     goodness_of_fit=PoissonDeviance(),
     weight=4.
@@ -98,21 +103,26 @@ target_stage = Target(
         [866, 1735, 1671, 1694],
     ]),
     n=[922, 1908, 3345, 4789, 5774, 6149, 5577, 5966],
+    # C: one SEPARATE list per stage -> one category per stage
     result_to_sim=events_from_result(
-        tags=[["crc_cl1"]],
-        ages=[[], [], ...]
+        tags=[["crc_cl1"], ["crc_cl2"], ["crc_cl3"], ["crc_cl4"]],
+        ages=AGES
     ),
+    # C: denominator = all clinical cases together in one list
     result_to_m=events_from_result(
-        tags=[["crc_cl1"]],
-        ages=[[], [], ...]
+        tags=[CL_TAGS],
+        ages=AGES
     ),
     goodness_of_fit=MultinomialDeviance()
 )
 
+# K: set to 1e6 to rerun the best parameter set with 1 million individuals
+N_POP = 1e5
+
 fit = Fit(
     model_from_x=model_from_x,
     targets=[target_incidence, target_stage],
-    n=1e5,
+    n=N_POP,
     seed=1234,
     event_ages=[50, 55, 60, 65, 70, 75, 80, 85],
     duration_ages=[50, 55, 60, 65, 70, 75, 80, 85],
@@ -120,6 +130,10 @@ fit = Fit(
 
 # Your initial guess for the parameter set
 x0 = [21.0, 3.9, 0.2, 0.22, 0.6]
+# F: adjusted guess based on 2E (later onset -> earlier, p1 & p3 lower, p2 higher)
+#x0 = [21.5, 3.6, 0.15, 0.33, 0.50]
+# K: paste the best parameter set from best.csv here and set N_POP = 1e6
+# x0 = [...]
 
 # Only evaluate x0 -> Comment this out for question 2G
 fit(x0)
@@ -131,21 +145,20 @@ def callback_func(x):
     Nfeval += 1
 
 # Calibrate the model -> Uncomment this for question 2G
-# x0_2 = [21.0, 3.9, 0.2, 0.22, 0.6]
-# print(datetime.datetime.now())
-# minimize(
-#     fun=fit,
-#     x0=np.array(x0_2),
-#     callback=callback_func,
-#     method="Nelder-Mead",
-#     options={
-#         "adaptive": True,
-#         "maxiter": 20,
-#         "disp": True
-#     }
-# )
-# print(datetime.datetime.now())
-
+x0_2 = [21.0, 3.9, 0.2, 0.22, 0.6]
+print(datetime.datetime.now())
+minimize(
+    fun=fit,
+    x0=np.array(x0_2),
+    callback=callback_func,
+    method="Nelder-Mead",
+    options={
+        "adaptive": True,
+        "maxiter": 20,
+        "disp": True
+    }
+)
+print(datetime.datetime.now())
 
 # Generate output - export the best found parameter set
 with open(f"best.csv", "w+", newline="") as file:
