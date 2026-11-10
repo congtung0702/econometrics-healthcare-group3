@@ -12,10 +12,11 @@ from miscore.tools.calibration import Target, Fit, MultinomialDeviance, PoissonD
 
 
 def model_from_x(x):
-    # Birth process
+
+    # A: Birth process born in 1975 only
     birth = processes.Birth(
         name="birth",
-        year=0
+        year=1975
     )
 
     # OC process
@@ -29,25 +30,28 @@ def model_from_x(x):
         "scale": x[1]
     }
 
+    # A: Add the three transition probabilities
     clinical_prob_from_x = {
-
+        1: x[2],
+        2: x[3],
+        3: x[4],
     }
 
-    # CRC process
+    # A: CRC process (take age from age_from_x and take clinical_probability from x)
     crc = CRC(
         name="crc",
-        age=crc_data.age,
+        age=age_from_x,
         dwell=crc_data.dwell,
-        clinical_probability=crc_data.clinical_probability,
+        clinical_probability=clinical_prob_from_x,
         cure=crc_data.cure,
         time_to_death=crc_data.time_to_death,
     )
 
-    # CRC screening process
+    # A: CRC screening process at age of 50
     crc_screening = CRC_screening(
         name="crc_screening",
         sensitivity=crc_screening_data.sensitivity,
-        screening_ages=[]
+        screening_ages=[50]
     )
 
     screening = Universe(
