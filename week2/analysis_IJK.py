@@ -136,14 +136,14 @@ for universe, style in [(NS, "-"), (S, "--")]:
     deaths_age = sub[sub.tag == "crc_death"].groupby("age").number.sum()
     axes[0].plot(cases_age.index, cases_age.values, style, label=universe)
     axes[1].plot(deaths_age.index, deaths_age.values, style, label=universe)
-axes[0].set_title("CRC-gevallen per leeftijd")
-axes[1].set_title("CRC-sterfte per leeftijd")
+axes[0].set_title("CRC-detections per ages")
+axes[1].set_title("CRC-deaths per age")
 for ax in axes:
-    ax.set_xlabel("Leeftijd")
-    ax.set_ylabel("Aantal")
+    ax.set_xlabel("Age")
+    ax.set_ylabel("Number")
     ax.legend()
 fig.tight_layout()
-fig.savefig(OUTPUT_DIR / "J_cases_deaths_by_age.png", dpi=150)
+fig.savefig(OUTPUT_DIR / "J.png", dpi=150)
 
 # 2) Totalen naast elkaar
 fig, ax = plt.subplots(figsize=(6, 4.5))

@@ -1,0 +1,243 @@
+from itertools import product
+from typing import Dict
+
+import numpy as np
+
+from miscore import Process, Individual
+from miscore.utils import PiecewiseLinear
+
+
+class CRC(Process):
+    """
+    This is a reduced-form version of the miscore CRC process that simulate
+    colorectal lesions and cancer.
+
+    :param name: The name of the process. Defaults to 'crc'.
+    :param age: This parameter holds the parameters for the onset distribution.
+        A parameter set (i.e. 'shape' and 'scale') should be given.
+    :param dwell: Dictionary holding all the parameters determining the dwell
+        times in each state.
+    :param cure: When a lesion transitions to a clinical state, it is cured
+        (i.e. the individual will live with the disease until death from other
+        causes) with a certain probability depending on the current age. This
+        parameter holds PiecewiseConstant functions mapping ages to probabilities.
+    :param time_to_death: If a cancerous lesion is not cured, an individual
+        will die from the disease. This parameter holds the distributions from
+        which the times to death are drawn.
+    """
+    name = "crc"
+
+    # log the important event tags
+    event_tags = [
+        "crc_cl1",
+        "crc_cl2",
+        "crc_cl3",
+        "crc_cl4",
+        "crc_sd1",
+        "crc_sd2",
+        "crc_sd3",
+        "crc_sd4",
+        "crc_death",
+    ]
+
+    # log the important duration tags
+    duration_tags = [
+        f"crc_{sd_cl}{stage}_{phase}"
+        for sd_cl, stage, phase
+        in product(
+            ["cl", "sd"],
+            ["1", "2", "3", "4"],
+            ["init", "cont", "term", "term_oc"]
+        )
+    ]
+
+    def __init__(self,
+                 age: Dict[str, float],
+                 dwell: Dict[str, float],
+                 clinical_probability: Dict[int, float],
+                 cure: Dict[int, PiecewiseLinear.Data],
+                 time_to_death: Dict[int, PiecewiseLinear.Data],
+                 name: str = "crc"):
+        self.name = name
+
+        self.age = age
+        self.dwell = dwell
+        self.clinical_probability = clinical_probability
+        self.cure = {k: PiecewiseLinear(v) for k, v in cure.items()}
+        self.time_to_death = {k: PiecewiseLinear(v) for k, v in time_to_death.items()}
+
+        self.callbacks = {
+            "__start__": self.schedule_onset,
+            "crc_onset": self.onset,
+            "crc_progress": self.progress,
+            "crc_clinical": self.clinical,
+            "__end__": self.log_durations
+        }
+
+    def properties(self, rng: np.random.Generator, n: int,
+                   properties: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
+        """Method to define temporary properties for each individual."""
+        # Calculate age of onset
+        onset_age = np.random.gamma(shape=self.age["shape"], scale=self.age["scale"], size=n)
+
+        # Draw random numbers to use in the natural history of the lesions
+        r_transition_1 = rng.random(n)
+        r_transition_2 = rng.random(n)
+        r_transition_3 = rng.random(n)
+        r_dwell_precursor = rng.standard_exponential(n)
+        r_cure = rng.random(n)
+        r_time_to_death = rng.random(n)
+
+        return {
+            "crc_onset": onset_age,
+            "crc_r_transition_1": r_transition_1,
+            "crc_r_transition_2": r_transition_2,
+            "crc_r_transition_3": r_transition_3,
+            "crc_r_dwell": r_dwell_precursor,
+            "crc_r_cure": r_cure,
+            "crc_r_time_to_death": r_time_to_death
+        }
+
+    @staticmethod
+    def schedule_onset(Individual: Individual):
+        """Method to schedule disease at onset age. """
+
+        # Initialize list that will hold the lesion
+        Individual.memory["crc_lesion"] = []
+        Individual.memory["crc_lesion_removed"] = False
+
+        # Schedule onset
+        Individual.add_to_queue_age(Individual.properties("crc_onset"), "crc_onset")
+
+    def onset(self, Individual: Individual):
+        """Method to create disease trajectory"""
+
+        # Retrieve natural history
+        natural_history = self._natural_history(Individual)
+        state, dwell = next(natural_history)
+
+        # Add event
+        Individual.add_to_queue(dwell, "crc_progress")
+
+        # Save state machine
+        Individual.memory["crc_natural_history"] = natural_history
+
+        # Store lesion in memory
+        Individual.memory["crc_lesion"] = state
+
+    @staticmethod
+    def progress(Individual: Individual):
+        """Method to simulate progression of the disease."""
+
+        # Do nothing if the lesion was removed
+        if Individual.memory["crc_lesion_removed"]:
+            return
+
+        # Retrieve natural history
+        state, dwell = next(Individual.memory["crc_natural_history"])
+
+        # Schedule next progress event after the dwell time
+        if dwell is not None:
+            Individual.add_to_queue(dwell, "crc_progress")
+            # Store lesion in memory
+            Individual.memory["crc_lesion"] = state
+
+        else:
+            Individual.add_to_queue(0., "crc_clinical", stage=state[-1])
+
+    def clinical(self, Individual: Individual, stage: str, screen_detected: bool = False):
+        """Method to determine clinical status of the lesions."""
+
+        # Log event and save to memory
+        if screen_detected:
+            Individual.log_event(f"crc_sd{stage}")
+        else:
+            Individual.log_event(f"crc_cl{stage}")
+
+        Individual.memory["crc_clinical_information"] = {
+            "age": Individual.age,
+            "stage": stage,
+            "screen_detected": screen_detected
+        }
+
+        # stop screening when clinically detected
+        Individual.add_to_queue(0., "crc_stop_screening")
+
+        # Retrieve random numbers
+        r_cure = Individual.properties("crc_r_cure")
+        cure_prob = self.cure[stage](Individual.age)
+
+        if r_cure < cure_prob:
+            return
+
+        # Retrieve random numbers
+        r_time_to_death = Individual.properties("crc_r_time_to_death")
+        time_to_death = self.time_to_death[stage](r_time_to_death)
+
+        Individual.add_to_queue(time_to_death, "crc_death", terminate=True)
+
+    def _natural_history(self, Individual: Individual):
+        """Method to set-up the natural history."""
+
+        yield "adenoma", Individual.properties("crc_r_dwell") * self.dwell["adenoma"]
+
+        if Individual.properties("crc_r_transition_1") < self.clinical_probability[1]:
+            yield "pcl1a", Individual.properties("crc_r_dwell") * self.dwell["pcl1a"]
+            yield "cl1", None
+            return
+
+        yield "pcl1b", Individual.properties("crc_r_dwell") * self.dwell["pcl1b"]
+
+        if Individual.properties("crc_r_transition_2") < self.clinical_probability[2]:
+            yield "pcl2a", Individual.properties("crc_r_dwell") * self.dwell["pcl2a"]
+            yield "cl2", None
+            return
+
+        yield "pcl2b", Individual.properties("crc_r_dwell") * self.dwell["pcl2b"]
+
+        if Individual.properties("crc_r_transition_3") < self.clinical_probability[3]:
+            yield "pcl3a", Individual.properties("crc_r_dwell") * self.dwell["pcl3a"]
+            yield "cl3", None
+            return
+
+        yield "pcl3b", Individual.properties("crc_r_dwell") * self.dwell["pcl3b"]
+
+        yield "pcl4", Individual.properties("crc_r_dwell") * self.dwell["pcl4"]
+
+        yield "cl4", None
+        return
+
+    @staticmethod
+    def log_durations(Individual: Individual, message: str):
+        """Method to log the durations."""
+
+        # Only log durations if CRC was clinical
+        if "crc_clinical_information" not in Individual.memory:
+            return
+
+        # Obtain the information on the clinical state of CRC of this person
+        clinical = Individual.memory["crc_clinical_information"]
+
+        # Determine clinical stage, depending on whether or not CRC was
+        # screen-detected
+        if clinical["screen_detected"]:
+            stage = f"sd{clinical['stage']}"
+        else:
+            stage = f"cl{clinical['stage']}"
+
+        # Obtain age at which CRC became clinical and age of death
+        t0 = clinical["age"]
+        t3 = Individual.age
+
+        # Calculate ages in between to be able to split the duration into init,
+        # cont and term durations
+        t2 = max(t0, t3 - 1.)
+        t1 = min(t2, t0 + 1.)
+
+        # Log durations
+        Individual.log_duration(f"crc_{stage}_init", t0, t1)
+        Individual.log_duration(f"crc_{stage}_cont", t1, t2)
+        if message == "crc_death":
+            Individual.log_duration(f"crc_{stage}_term", t2, t3)
+        else:
+            Individual.log_duration(f"crc_{stage}_term_oc", t2, t3)

@@ -1024,11 +1024,11 @@
 1022,screening,0,crc_death,2073.0,98.0,38
 1023,screening,0,crc_death,2074.0,99.0,31
 1024,screening,0,crc_screening_adenoma,2025.0,50.0,1724
-1025,screening,0,crc_screening_adenoma,2030.0,55.0,4240
-1026,screening,0,crc_screening_adenoma,2035.0,60.0,8009
+1025,screening,0,crc_screening_adenoma,2030.0,55.0,2537
+1026,screening,0,crc_screening_adenoma,2035.0,60.0,3850
 1027,screening,0,crc_screening_cancer,2025.0,50.0,325
 1028,screening,0,crc_screening_cancer,2030.0,55.0,425
 1029,screening,0,crc_screening_cancer,2035.0,60.0,717
 1030,screening,0,crc_screening_negative,2025.0,50.0,94712
-1031,screening,0,crc_screening_negative,2030.0,55.0,90011
-1032,screening,0,crc_screening_negative,2035.0,60.0,82600
+1031,screening,0,crc_screening_negative,2030.0,55.0,91714
+1032,screening,0,crc_screening_negative,2035.0,60.0,86759
