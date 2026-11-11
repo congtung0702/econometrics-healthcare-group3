@@ -71,13 +71,16 @@ target_incidence = Target(
     x=[52, 57, 62, 67, 72, 77, 82, 93],
     obs=[922, 1908, 3345, 4789, 5774, 6149, 5577, 5966],
     n=[483074, 473140, 456751, 430442, 390066, 334394, 259603, 260922],
+    # B: Retrieve all clinical stages aggregated into one group.
+    # D: Select age groups using their lower bounds.
     result_to_sim=events_from_result(
-        tags=[["crc_cl1"]],
-        ages=[[], [], ...]
+        tags=[["crc_cl1", "crc_cl2", "crc_cl3", "crc_cl4"]],
+        ages=[[50], [55], [60], [65], [70], [75], [80], [85]]
     ),
+    # D: Select age groups using their lower bounds.
     result_to_m=durations_from_result(
         tags=[["life"]],
-        ages=[[], [], ...]
+        ages=[[50], [55], [60], [65], [70], [75], [80], [85]]
     ),
     goodness_of_fit=PoissonDeviance(),
     weight=4.
@@ -98,13 +101,17 @@ target_stage = Target(
         [866, 1735, 1671, 1694],
     ]),
     n=[922, 1908, 3345, 4789, 5774, 6149, 5577, 5966],
+    # C: Retrieve the four clinical stages separately.
+    # D: Select age groups using their lower bounds.
     result_to_sim=events_from_result(
-        tags=[["crc_cl1"]],
-        ages=[[], [], ...]
+        tags=[["crc_cl1"], ["crc_cl2"], ["crc_cl3"], ["crc_cl4"]],
+        ages=[[50], [55], [60], [65], [70], [75], [80], [85]]
     ),
+    # C: Retrieve all clinical stages aggregated into one group.
+    # D: Select age groups using their lower bounds.
     result_to_m=events_from_result(
-        tags=[["crc_cl1"]],
-        ages=[[], [], ...]
+        tags=[["crc_cl1", "crc_cl2","crc_cl3", "crc_cl4"]],
+        ages=[[50], [55], [60], [65], [70], [75], [80], [85]]
     ),
     goodness_of_fit=MultinomialDeviance()
 )
@@ -121,8 +128,11 @@ fit = Fit(
 # Your initial guess for the parameter set
 x0 = [21.0, 3.9, 0.2, 0.22, 0.6]
 
+# F: Adjusted guess based on E
+# x0 = [21.5, 3.6, 0.15, 0.33, 0.50]
+
 # Only evaluate x0 -> Comment this out for question 2G
-fit(x0)
+# fit(x0)
 
 Nfeval = 1
 def callback_func(x):
@@ -131,20 +141,21 @@ def callback_func(x):
     Nfeval += 1
 
 # Calibrate the model -> Uncomment this for question 2G
-# x0_2 = [21.0, 3.9, 0.2, 0.22, 0.6]
-# print(datetime.datetime.now())
-# minimize(
-#     fun=fit,
-#     x0=np.array(x0_2),
-#     callback=callback_func,
-#     method="Nelder-Mead",
-#     options={
-#         "adaptive": True,
-#         "maxiter": 20,
-#         "disp": True
-#     }
-# )
-# print(datetime.datetime.now())
+x0_2 = [21.0, 3.9, 0.2, 0.22, 0.6]
+# H: x0_2 = [21.5, 3.6, 0.15, 0.33, 0,50]
+print(datetime.datetime.now())
+minimize(
+     fun=fit,
+     x0=np.array(x0_2),
+     callback=callback_func,
+     method="Nelder-Mead",
+     options={
+         "adaptive": True,
+         "maxiter": 20, # H: set to 100
+         "disp": True
+     }
+ )
+print(datetime.datetime.now())
 
 
 # Generate output - export the best found parameter set
