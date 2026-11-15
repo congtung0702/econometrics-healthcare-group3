@@ -78,6 +78,7 @@ target_incidence = Target(
         ages=[[50], [55], [60], [65], [70], [75], [80], [85]]
     ),
     # D: Select age groups using their lower bounds.
+    # B: Retrieve life-years
     result_to_m=durations_from_result(
         tags=[["life"]],
         ages=[[50], [55], [60], [65], [70], [75], [80], [85]]
@@ -119,17 +120,20 @@ target_stage = Target(
 fit = Fit(
     model_from_x=model_from_x,
     targets=[target_incidence, target_stage],
-    n=1e5,
+    n=1e5, # K: n=1e6,
     seed=1234,
     event_ages=[50, 55, 60, 65, 70, 75, 80, 85],
     duration_ages=[50, 55, 60, 65, 70, 75, 80, 85],
 )
 
-# Your initial guess for the parameter set
-x0 = [21.0, 3.9, 0.2, 0.22, 0.6]
+# E: Your initial guess for the parameter set
+# x0 = [21.0, 3.9, 0.2, 0.22, 0.6]
 
 # F: Adjusted guess based on E
 # x0 = [21.5, 3.6, 0.15, 0.33, 0.50]
+
+# K: Best guess based on H:
+# x0 = [21.537, 3.577, 0.151, 0.333, 0.505]
 
 # Only evaluate x0 -> Comment this out for question 2G
 # fit(x0)
@@ -141,21 +145,21 @@ def callback_func(x):
     Nfeval += 1
 
 # Calibrate the model -> Uncomment this for question 2G
-x0_2 = [21.0, 3.9, 0.2, 0.22, 0.6]
+# x0_2 = [21.0, 3.9, 0.2, 0.22, 0.6]
 # H: x0_2 = [21.5, 3.6, 0.15, 0.33, 0,50]
-print(datetime.datetime.now())
-minimize(
-     fun=fit,
-     x0=np.array(x0_2),
-     callback=callback_func,
-     method="Nelder-Mead",
-     options={
-         "adaptive": True,
-         "maxiter": 20, # H: set to 100
-         "disp": True
-     }
- )
-print(datetime.datetime.now())
+# print(datetime.datetime.now())
+# minimize(
+#      fun=fit,
+#      x0=np.array(x0_2),
+#      callback=callback_func,
+#      method="Nelder-Mead",
+#      options={
+#          "adaptive": True,
+#          "maxiter": 20, # H: set to 100
+#          "disp": True
+#      }
+#  )
+# print(datetime.datetime.now())
 
 
 # Generate output - export the best found parameter set
