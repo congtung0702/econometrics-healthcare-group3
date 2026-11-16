@@ -77,7 +77,10 @@ cea_data = {
         "conditions": [
         ],
         "events": {
-            "crc_screening_cancer": [0., 0., 0., 1.]
+            # A: Count all screening results
+            "crc_screening_cancer": [0., 0., 0., 1.],
+            "crc_screening_negative" : [0., 0., 0., 1.],
+            "crc_screening_adenoma" : [0., 0., 0., 1.],
         },
         "durations": {
             "life": [0., 1., 1., 0.]
