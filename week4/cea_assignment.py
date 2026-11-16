@@ -72,25 +72,90 @@ cea_labels = [
     "screens"
 ]
 
+
+# B: Duration tags for stage III and IV cancers
+stage3_tags = tuple(
+    f"crc_{diagnosis}3_{phase}"
+    for diagnosis in ["cl", "sd"]
+    for phase in ["init", "cont", "term", "term_oc"]
+)
+
+stage4_tags = tuple(
+    f"crc_{diagnosis}4_{phase}"
+    for diagnosis in ["cl", "sd"]
+    for phase in ["init", "cont", "term", "term_oc"]
+)
+
+# B: Disutilities for each age group
+dis3_young = 0.89 * (1 - 0.72 / 0.84)
+dis4_young = 0.89 * (1 - 0.60 / 0.84)
+
+# B: cea_data based on Quality of Life inputs.
 cea_data = {
-    "Example": {
-        "conditions": [
-        ],
+    "Screens": {
+        "conditions": [],
         "events": {
-            # A: Count all screening results
-            "crc_screening_cancer": [0., 0., 0., 1.],
-            "crc_screening_negative" : [0., 0., 0., 1.],
-            "crc_screening_adenoma" : [0., 0., 0., 1.],
+            # A: Count all screens
+            # C: Screening Costs and initial follow-up costs
+            "crc_screening_cancer": [352.50 + 404., 0., 0., 1.],
+            "crc_screening_negative": [352.50 + 0.084*421.95, 0., 0., 1.],
+            "crc_screening_adenoma": [352.50 + 0.121*421.95, 0., 0., 1.]
         },
+        "durations": {}
+    },
+
+    "Under_60": {
+        "conditions": [("age", "<", 60)],
+        "events": {},
         "durations": {
-            "life": [0., 1., 1., 0.]
+            "life": [0., 1., 0.89, 0.],
+            stage3_tags: [0., 0., -dis3_young, 0.],
+            stage4_tags: [0., 0., -dis4_young, 0.]
+        }
+    },
+
+    "Age_60_plus": {
+        "conditions": [("age", ">=", 60)],
+        "events": {},
+        "durations": {
+            "life": [0., 1., 0.84, 0.],
+            stage3_tags: [0., 0., -0.12, 0.],
+            stage4_tags: [0., 0., -0.24, 0.]
+        }
+    },
+
+    "Cancer_Costs" : {
+        "conditions": [],
+        "events": {},
+        "durations": {
+            # C: Initial care
+            r"^crc_(cl|sd)[12]_init$":
+                [3141.59 * 12, 0., 0., 0.],
+            r"^crc_(cl|sd)[34]_init$":
+                [8000.00 * 12, 0., 0., 0.],
+
+            # C: Continuing care
+            r"^crc_(cl|sd)[12]_cont$":
+                [141.42 * 12, 0., 0., 0.],
+            r"^crc_(cl|sd)[34]_cont$":
+                [271.78 * 12, 0., 0., 0.],
+
+            # C: Final year before death from other causes
+            r"^crc_(cl|sd)[12]_term_oc$":
+                [141.42 * 12, 0., 0., 0.],
+            r"^crc_(cl|sd)[34]_term_oc$":
+                [271.78 * 12, 0., 0., 0.],
+
+            # C: Terminal care before CRC death
+            r"^crc_(cl|sd)[1-4]_term$":
+                [2109.80 * 12, 0., 0., 0.]
         }
     }
 }
 
-discount_rate = (0.05, 0.0, 0.0, 0.0)
-
-discount_start = 0
+# C: Adjusted discount parameters
+discount_rate = (0.03, 0.03, 0.03, 0.0)
+discount_start = 2022
 
 cea_result = cea.cost_effectiveness_analysis(
     cea_data=cea_data,
@@ -98,9 +163,12 @@ cea_result = cea.cost_effectiveness_analysis(
     durations=durations,
     events=events,
     discount_by="year",
-    discount_start=0,
+    # C: set correct year
+    discount_start=discount_start,
     discount_rate=discount_rate,
-    reference="no_screening"
+    reference="no_screening",
+    # C: use regex notation
+    use_regex=True
 )
 
 print(cea_result.cea_output)
