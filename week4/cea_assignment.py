@@ -1,3 +1,8 @@
+# D,E : Imported packages
+import pandas as pd
+from itertools import product
+import matplotlib.pyplot as plt
+
 from miscore import Model, processes, Universe
 import crc_data, crc_screening_data
 from miscore.tools.cea import cea
@@ -40,11 +45,24 @@ universe_no_screening = Universe(
         processes=[birth, oc, crc]
 )
 
-# Define which strategies are included in our CEA
-universes = [
-    universe_screening,
-    universe_no_screening
-]
+# D: Add all eight screening strategies
+universes = [universe_screening, universe_no_screening]
+
+for i, (start, interval, stop) in enumerate(
+    product([50, 55], [2, 3], [60, 65]), start=1
+):
+    screen = CRC_screening(
+        name=f"screening_{i}",
+        sensitivity=crc_screening_data.sensitivity,
+        screening_ages=list(range(start, stop, interval))
+    )
+
+    universes.append(
+        Universe(
+            name=f"universe_screening_{i}",
+            processes=[birth, oc, crc, screen]
+        )
+    )
 
 # Pass the list of universes to our Model
 model = Model(universes)
@@ -172,3 +190,44 @@ cea_result = cea.cost_effectiveness_analysis(
 )
 
 print(cea_result.cea_output)
+
+# D: Obtain output off al 8 strategies
+universe_table = pd.pivot_table(cea_result.cea_output,
+aggfunc="sum", columns="label", values="number",
+index="universe")
+
+print(universe_table)
+
+# E: Net Monetary Benefit
+universe_table["NMB"] = (
+    50000 * universe_table["QALY"] - universe_table["costs"]
+)
+print(universe_table[["NMB"]])
+
+# E: Plot NMB for each strategy
+ax = (universe_table["NMB"] / 1e6).sort_values().plot(
+    kind="barh",
+    figsize=(10, 5)
+)
+
+# E: Efficient frontier
+efficient_strategies = cea.find_efficient(universe_table)
+print(efficient_strategies)
+
+# E: Cost-effectiveness scatter plot
+cea.scatter_ce(
+    universe_table,
+    x_label="costs",
+    y_label="QALY",
+    tags="index",
+    save_location="CEA_scatter.png"
+)
+cea.show()
+
+ax.set_xlabel("Net Monetary Benefit (million)")
+ax.set_ylabel("Screening Strategy")
+ax.set_title("NMB at a Willingness-to-Pay of €50,000/QALY")
+
+plt.tight_layout()
+plt.savefig("NMB.png", dpi=300)
+plt.show()
