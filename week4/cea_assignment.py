@@ -90,7 +90,6 @@ cea_labels = [
     "screens"
 ]
 
-
 # B: Duration tags for stage III and IV cancers
 stage3_tags = tuple(
     f"crc_{diagnosis}3_{phase}"
@@ -202,6 +201,7 @@ print(universe_table)
 universe_table["NMB"] = (
     50000 * universe_table["QALY"] - universe_table["costs"]
 )
+
 print(universe_table[["NMB"]])
 
 # E: Plot NMB for each strategy
@@ -210,24 +210,10 @@ ax = (universe_table["NMB"] / 1e6).sort_values().plot(
     figsize=(10, 5)
 )
 
-# E: Efficient frontier
-efficient_strategies = cea.find_efficient(universe_table)
-print(efficient_strategies)
-
-# E: Cost-effectiveness scatter plot
-cea.scatter_ce(
-    universe_table,
-    x_label="costs",
-    y_label="QALY",
-    tags="index",
-    save_location="CEA_scatter.png"
-)
-cea.show()
-
-ax.set_xlabel("Net Monetary Benefit (million)")
+ax.set_xlabel("Net Monetary Benefit (€ million)")
 ax.set_ylabel("Screening Strategy")
 ax.set_title("NMB at a Willingness-to-Pay of €50,000/QALY")
 
 plt.tight_layout()
-plt.savefig("NMB.png", dpi=300)
+plt.savefig("NMB.png", dpi=300, bbox_inches="tight")
 plt.show()
