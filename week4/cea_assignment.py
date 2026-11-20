@@ -52,7 +52,6 @@ universes = [
 ]
 
 # D: Generate all eight screening strategies
-#    (start age, interval, stop age); the stop age itself is not screened
 for i, (start, interval, stop) in enumerate(
     product([50, 55], [2, 3], [60, 65]), start=1
 ):
@@ -100,7 +99,7 @@ dis3_young = 0.89 * (1 - 0.72 / 0.84)
 dis4_young = 0.89 * (1 - 0.60 / 0.84)
 
 # B: Regex patterns for all duration tags of stage III and IV
-#    (anchored with ^...$ so that e.g. "term" does not also match "term_oc")
+# B: (anchored with ^...$ so that e.g. "term" does not also match "term_oc")
 STAGE3 = r"^crc_(cl|sd)3_(init|cont|term|term_oc)$"
 STAGE4 = r"^crc_(cl|sd)4_(init|cont|term|term_oc)$"
 
