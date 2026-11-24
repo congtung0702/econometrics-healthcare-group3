@@ -1,35 +1,9 @@
-
 # Load Data ----
-data = read.csv("C:/Users/Sven/Downloads/Fake_CRC_riskdata.csv")
+data = read.csv("Fake_CRC_riskdata.csv")
 
+# Libraries used
 library(dplyr)
 library(pROC)
-
-# Question A. ----
-
-# No missing values
-colSums(is.na(data))
-
-# General descriptive statistics
-summary(data)
-
-# Standard deviations
-round(sqrt(diag(var(data))), 3)
-
-# Correlation check
-round(cor(data), 3)
-
-
-# Question B & C. ----
-set.seed(2026)
-
-# Randomly select 70% of observations
-train_index = sample(1:nrow(data), size = 0.7 * nrow(data))
-
-# Split data
-train = data[train_index, ]
-test = data[-train_index, ]
-
 
 # Functions ----
 
@@ -108,7 +82,6 @@ calibration_plot = function(actual, predicted, name = "Model", bins = 10) {
   )))
 }
 
-
 # ROC curve and AUROC
 roc_plot = function(actual, predicted, name = "Model") {
   
@@ -155,8 +128,28 @@ roc_plot = function(actual, predicted, name = "Model") {
   return(auc_value)
 }
 
+# Question A. ----
 
-# Baseline Model ----
+# No missing values
+colSums(is.na(data))
+# General descriptive statistics
+summary(data)
+# Standard deviations
+round(sqrt(diag(var(data))), 3)
+# Correlation check
+round(cor(data), 3)
+
+# Question B & C. ----
+set.seed(2026)
+
+# Randomly select 70% of observations
+train_index = sample(1:nrow(data), size = 0.7 * nrow(data))
+
+# Split data
+train = data[train_index, ]
+test = data[-train_index, ]
+
+# Baseline Model
 
 model = glm(
   CRC ~ male + age + FIT_1 + FIT_2,
@@ -169,12 +162,11 @@ summary(model)
 # Predictions
 test$predicted = predict(model, newdata = test, type = "response")
 
-# Question D: Calibration
+# Question D: Calibration ----
 cal1 = calibration_plot(test$CRC, test$predicted, "Baseline Model")
 
-# Question E: ROC + AUROC
+# Question E: ROC + AUROC ----
 auc1 = roc_plot(test$CRC, test$predicted, "Baseline Model")
-
 
 # Question H: Interaction Model ----
 
@@ -196,7 +188,7 @@ cal2 = calibration_plot(test$CRC, test$predicted2, "Interaction Model")
 auc2 = roc_plot(test$CRC, test$predicted2, "Interaction Model")
 
 
-# Model Comparison ----
+# Model Comparison 
 
 comparison = data.frame(
   Model = c("Baseline", "Interactions"),
