@@ -1,5 +1,9 @@
-# Load Data
-data = read.csv("Fake_CRC_riskdata.csv")
+
+# Load Data ----
+data = read.csv("C:/Users/Sven/Downloads/Fake_CRC_riskdata.csv")
+
+library(dplyr)
+library(pROC)
 
 # Question A. ----
 
@@ -15,126 +19,196 @@ round(sqrt(diag(var(data))), 3)
 # Correlation check
 round(cor(data), 3)
 
+
 # Question B & C. ----
-set.seed(2026) 
+set.seed(2026)
 
 # Randomly select 70% of observations
 train_index = sample(1:nrow(data), size = 0.7 * nrow(data))
 
 # Split data
-train = data[train_index,]
-test = data[-train_index,]
+train = data[train_index, ]
+test = data[-train_index, ]
 
-# Train logigistic regression and show coeffients
-model = glm(CRC ~ male + age + FIT_1 + FIT_2, family = binomial(link = "logit"), data = train)
+
+# Functions ----
+
+# Calibration plot, intercept, slope and Wald tests
+calibration_plot = function(actual, predicted, name = "Model", bins = 10) {
+  
+  # Divide observations into equally sized bins
+  calibration = data.frame(
+    actual = actual,
+    predicted = predicted,
+    bin = ntile(predicted, bins)
+  ) %>%
+    group_by(bin) %>%
+    summarise(
+      predicted = mean(predicted),
+      observed = mean(actual),
+      n = n(),
+      .groups = "drop"
+    )
+  
+  print(calibration)
+  
+  # Calibration plot
+  max_value = max(calibration$predicted, calibration$observed)
+  
+  plot(
+    calibration$predicted,
+    calibration$observed,
+    xlab = "Predicted CRC probability",
+    ylab = "Observed CRC proportion",
+    main = paste("Calibration Plot -", name),
+    pch = 19,
+    xlim = c(0, max_value),
+    ylim = c(0, max_value)
+  )
+  
+  # Perfect calibration line
+  abline(0, 1, col = "red", lty = 2)
+  
+  # Calibration intercept and slope
+  logit_pred = qlogis(
+    pmin(pmax(predicted, 1e-8), 1 - 1e-8)
+  )
+  
+  cal_model = glm(
+    actual ~ logit_pred,
+    family = binomial(link = "logit")
+  )
+  
+  # Estimated coefficients and standard errors
+  estimates = coef(cal_model)
+  se = sqrt(diag(vcov(cal_model)))
+  
+  # Null hypotheses: intercept = 0, slope = 1
+  null_values = c(0, 1)
+  
+  # Wald tests
+  z_values = (estimates - null_values) / se
+  p_values = 2 * pnorm(-abs(z_values))
+  
+  # Results
+  cal_results = data.frame(
+    Estimate = estimates,
+    Std_Error = se,
+    H0 = null_values,
+    z_value = z_values,
+    p_value = p_values
+  )
+  
+  print(round(cal_results, 4))
+  
+  return(invisible(list(
+    calibration = calibration,
+    model = cal_model,
+    results = cal_results
+  )))
+}
+
+
+# ROC curve and AUROC
+roc_plot = function(actual, predicted, name = "Model") {
+  
+  # ROC curve
+  roc_model = roc(
+    response = actual,
+    predictor = predicted,
+    levels = c(0, 1),
+    direction = "<",
+    quiet = TRUE
+  )
+  
+  # Calculate AUROC
+  auc_value = as.numeric(auc(roc_model))
+  
+  # Plot ROC curve
+  plot(
+    roc_model,
+    legacy.axes = TRUE,
+    xlim = c(1, 0),
+    ylim = c(0, 1),
+    xaxs = "i",
+    yaxs = "i",
+    asp = NA,
+    col = "blue",
+    lwd = 3,
+    main = paste("ROC Curve -", name),
+    xlab = "False Positive Rate (1 - Specificity)",
+    ylab = "True Positive Rate (Sensitivity)",
+    identity = TRUE,
+    identity.col = "red",
+    identity.lty = 2
+  )
+  
+  # Add AUROC to plot
+  legend(
+    "bottomright",
+    legend = paste("AUROC =", round(auc_value, 4)),
+    bty = "n"
+  )
+  
+  print(paste(name, "- AUROC:", round(auc_value, 4)))
+  
+  return(auc_value)
+}
+
+
+# Baseline Model ----
+
+model = glm(
+  CRC ~ male + age + FIT_1 + FIT_2,
+  family = binomial(link = "logit"),
+  data = train
+)
+
 summary(model)
 
-# Question D ----
-# Predict probabilities
-test$predicted = predict(
-  model,
-  newdata = test,
-  type = "response"
-)
+# Predictions
+test$predicted = predict(model, newdata = test, type = "response")
 
-# Divide test observations into 10 equally sized bins
-library(dplyr)
+# Question D: Calibration
+cal1 = calibration_plot(test$CRC, test$predicted, "Baseline Model")
 
-test$bin = ntile(test$predicted, 10)
+# Question E: ROC + AUROC
+auc1 = roc_plot(test$CRC, test$predicted, "Baseline Model")
 
-# Calculate observed and predicted probabilities per bin
-calibration = test %>%
-  group_by(bin) %>%
-  summarise(
-    predicted = mean(predicted),
-    observed = mean(CRC),
-    n = n()
-  )
 
-print(calibration)
+# Question H: Interaction Model ----
 
-# Calibration plot
-plot(
-  calibration$predicted,
-  calibration$observed,
-  xlab = "Predicted CRC probability",
-  ylab = "Observed CRC proportion",
-  main = "Calibration plot (10 bins)",
-  pch = 19,
-  xlim = c(0, max(calibration$predicted,
-                  calibration$observed)),
-  ylim = c(0, max(calibration$predicted,
-                  calibration$observed))
-)
-
-# Perfect calibration line
-abline(0, 1, col = "red", lty = 2)
-
-# Calibration intercept and slope
-test$logit_pred = qlogis(
-  pmin(pmax(test$predicted, 1e-8), 1 - 1e-8)
-)
-
-cal_model = glm(
-  CRC ~ logit_pred,
+model2 = glm(
+  CRC ~ (male + age + FIT_1 + FIT_2)^2,
   family = binomial(link = "logit"),
-  data = test
+  data = train
 )
 
-summary(cal_model)
+summary(model2)
 
-# Estimated coefficients and standard errors
-estimates = coef(cal_model)
-se = sqrt(diag(vcov(cal_model)))
+# Predictions
+test$predicted2 = predict(model2, newdata = test, type = "response")
 
-# Null hypotheses: intercept = 0, slope = 1
-null_values = c(0, 1)
+# Calibration
+cal2 = calibration_plot(test$CRC, test$predicted2, "Interaction Model")
 
-# Wald tests
-z_values = (estimates - null_values) / se
-p_values = 2 * pnorm(-abs(z_values))
+# ROC + AUROC
+auc2 = roc_plot(test$CRC, test$predicted2, "Interaction Model")
 
-# Results
-cal_results = data.frame(
-  Estimate = estimates,
-  Std_Error = se,
-  H0 = null_values,
-  z_value = z_values,
-  p_value = p_values
+
+# Model Comparison ----
+
+comparison = data.frame(
+  Model = c("Baseline", "Interactions"),
+  AUROC = c(auc1, auc2),
+  Calibration_Intercept = c(
+    coef(cal1$model)[1],
+    coef(cal2$model)[1]
+  ),
+  Calibration_Slope = c(
+    coef(cal1$model)[2],
+    coef(cal2$model)[2]
+  )
 )
 
-print(round(cal_results, 4))
-
-
-# Question E. ----
-library(pROC)
-
-# ROC curve using test dataset
-roc_model = roc(
-  response = test$CRC,
-  predictor = test$predicted,
-  levels = c(0, 1),
-  direction = "<"
-)
-
-# Area under the ROC curve
-auc(roc_model)
-
-# ROC-Curve plot 
-plot(
-  roc_model,
-  legacy.axes = TRUE,
-  xlim = c(1, 0),
-  ylim = c(0, 1),
-  xaxs = "i",
-  yaxs = "i",
-  asp = NA,
-  col = "blue",
-  lwd = 3,
-  main = "ROC Curve",
-  xlab = "False Positive Rate (1 - Specificity)",
-  ylab = "True Positive Rate (Sensitivity)",
-  identity = TRUE,
-  identity.col = "red",
-  identity.lty = 2
-)
+print(comparison)
