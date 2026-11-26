@@ -1,0 +1,138 @@
+
+==============================================================================
+A. DESCRIPTIVE STATISTICS
+==============================================================================
+Number of observations: 150000
+Missing values per variable:
+CRC      0
+age      0
+male     0
+FIT_1    0
+FIT_2    0
+
+Descriptive statistics:
+         Mean     SD  Median   Min     Max
+CRC     0.012  0.110     0.0   0.0   1.000
+age    69.251  1.646    69.0  64.0  71.000
+male    0.479  0.500     0.0   0.0   1.000
+FIT_1   1.470  5.108     0.0   0.0  46.999
+FIT_2   1.176  5.196     0.0   0.0  46.992
+
+CRC cases: 1847 (1.23%)
+Share FIT_1 = 0: 78.1%
+Share FIT_2 = 0: 91.1%
+Share both FIT = 0: 73.7%  (CRC rate 0.49% vs 3.32% for the others)
+
+Age distribution and CRC rate per age:
+         N  CRC_rate
+age                 
+64    1225      1.55
+66    4369      1.14
+67   27650      1.12
+68    8214      1.35
+69   41538      1.13
+70   13623      1.25
+71   53381      1.34
+
+CRC rate per sex (%):
+male
+0    0.94
+1    1.54
+
+CRC rate (%) by previous FIT category:
+       FIT_1 N  FIT_1 CRC (%)  FIT_2 N  FIT_2 CRC (%)
+FIT_1                                                
+0       117105           0.67   136657           0.72
+0-10     26039           2.21     7226           4.57
+10-20     4110           5.55     2998           7.54
+20-30     1343           7.74     1437           8.77
+30-47     1403          11.19     1682          10.82
+
+Correlation matrix:
+         CRC    age   male  FIT_1  FIT_2
+CRC    1.000  0.006  0.027  0.140  0.151
+age    0.006  1.000 -0.004  0.010  0.014
+male   0.027 -0.004  1.000  0.046  0.037
+FIT_1  0.140  0.010  0.046  1.000  0.197
+FIT_2  0.151  0.014  0.037  0.197  1.000
+
+==============================================================================
+B & C. BASELINE LOGISTIC REGRESSION (70% training data)
+==============================================================================
+Training set: 105000 observations (1282 CRC cases)
+Test set:     45000 observations (565 CRC cases)
+
+           Estimate  Std. Error  z-value  p-value  Odds Ratio
+Intercept   -6.6839      1.2353  -5.4109   0.0000      0.0013
+male         0.3824      0.0589   6.4945   0.0000      1.4658
+age          0.0236      0.0178   1.3281   0.1841      1.0239
+FIT_1        0.0621      0.0024  26.2173   0.0000      1.0641
+FIT_2        0.0656      0.0022  29.6800   0.0000      1.0678
+
+Odds ratio per 10 µg/g increase: FIT_1 = 1.861, FIT_2 = 1.928
+95% CI for age coefficient: [-0.0113, 0.0585]
+Predicted probability for the intercept (female, age 0, FIT = 0): 0.1249%
+
+==============================================================================
+D. CALIBRATION (30% test data) - BASELINE
+==============================================================================
+Calibration per bin (predicted and observed in %):
+     predicted  observed     n
+bin                           
+1        0.605     0.356  4500
+2        0.633     0.489  4500
+3        0.651     0.356  4500
+4        0.666     0.333  4500
+5        0.784     1.044  4500
+6        0.906     0.489  4500
+7        0.937     0.800  4500
+8        0.973     0.889  4500
+9        1.071     1.511  4500
+10       4.875     6.289  4500
+
+                       Estimate  Std. Error   H0  z-value  p-value
+Calibration intercept   -0.0635      0.1415  0.0  -0.4487   0.6536
+Calibration slope        0.9742      0.0337  1.0  -0.7658   0.4438
+
+==============================================================================
+E. ROC CURVE AND AUROC - BASELINE
+==============================================================================
+AUROC baseline model: 0.7668
+
+==============================================================================
+H. IMPROVED MODELS
+==============================================================================
+Coefficients of the log(1+FIT) model:
+           Estimate  Std. Error  z-value  p-value  Odds Ratio
+Intercept   -6.8579      1.2342  -5.5568   0.0000      0.0011
+male         0.3024      0.0590   5.1293   0.0000      1.3531
+age          0.0219      0.0178   1.2300   0.2187      1.0221
+log_FIT_1    0.5849      0.0235  24.9393   0.0000      1.7948
+log_FIT_2    0.6387      0.0217  29.4919   0.0000      1.8939
+
+Coefficients of the interaction model:
+             Estimate  Std. Error  z-value  p-value  Odds Ratio
+Intercept     -8.0640      2.1201  -3.8037   0.0001      0.0003
+male           0.8256      2.5182   0.3279   0.7430      2.2833
+age            0.0425      0.0306   1.3919   0.1640      1.0434
+FIT_1          0.2401      0.0952   2.5224   0.0117      1.2714
+FIT_2          0.0504      0.0916   0.5495   0.5827      1.0516
+male:age      -0.0055      0.0363  -0.1528   0.8786      0.9945
+male:FIT_1    -0.0039      0.0046  -0.8508   0.3949      0.9961
+male:FIT_2    -0.0054      0.0043  -1.2565   0.2089      0.9946
+age:FIT_1     -0.0024      0.0014  -1.7686   0.0770      0.9976
+age:FIT_2      0.0004      0.0013   0.2772   0.7816      1.0004
+FIT_1:FIT_2   -0.0007      0.0002  -4.6883   0.0000      0.9993
+
+Comparison on the test set (same split as B-E):
+               AUROC  Cal. intercept  Cal. intercept SE  Cal. slope  Cal. slope SE  AIC (train)
+Model                                                                                          
+Baseline      0.7668         -0.0635             0.1415      0.9742         0.0337   12333.0167
+Interactions  0.7663         -0.0711             0.1373      0.9726         0.0331   12316.2168
+log(1+FIT)    0.7783         -0.1665             0.1245      0.9476         0.0306   11879.0473
+
+Robustness check: 20 random 70/30 train-test splits
+              AUROC mean  AUROC sd  Cal. intercept mean  Cal. slope mean  AUROC > baseline (of 20)
+Baseline          0.7752    0.0077               0.0269           1.0012                       0.0
+Interactions      0.7738    0.0080               0.0136           0.9980                       6.0
+log(1+FIT)        0.7873    0.0073               0.0093           0.9970                      19.0
